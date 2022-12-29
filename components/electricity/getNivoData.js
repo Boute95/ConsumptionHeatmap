@@ -1,6 +1,23 @@
+import data from "../../data/mes-puissances-atteintes-30min-22408972440918-77500.csv";
+
 ////////////////////////////////////////////////////////////////////////////////
-export default function EdfCsvToAppCsv(inCsv) {
-  // let outCsv = new Array();
+export default async function getNivoData() {
+  const outData = AppCsvToNivoData(EdfCsvToAppCsv(getTmpRawData(data)));
+  const outMeta = getMetaData(outData);
+  return {
+    data: outData,
+    meta: outMeta,
+  };
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function getTmpRawData() {
+  let ret = data.slice(0, 3200);
+  return ret;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+function EdfCsvToAppCsv(inCsv) {
   let outCsv = deepCopy(inCsv);
   outCsv = outCsv.slice(1);
   renameKeys(outCsv);
@@ -58,6 +75,58 @@ function renameKeys(inCsv) {
     }
     delete line["__parsed_extra"];
   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function getMetaData(data) {
+  let ret_meta = {
+    minEnergie: null,
+    maxEnergie: 0,
+  };
+
+  for (let day of data) {
+    for (let cell of day.data) {
+      if (cell.y > ret_meta.maxEnergie) {
+        ret_meta.maxEnergie = cell.y;
+      }
+      if (!ret_meta.minEnergie || cell.y < ret_meta.minEnergie) {
+        ret_meta.minEnergie = cell.y;
+      }
+    }
+  }
+
+  return ret_meta;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function AppCsvToNivoData(data) {
+  let nivo = [];
+  let idx = 0;
+  for (let row of data) {
+    if (!row.energie && isDate(row.date)) {
+      nivo.push({ id: row.date, data: [] });
+    } else if (row.energie) {
+      let currDay = nivo[nivo.length - 1];
+      const newCell = {
+        x: row.date,
+        y: row.energie,
+      };
+      if (!cellAlreadyExists(currDay.data, newCell)) {
+        currDay.data.push(newCell);
+      }
+    }
+  }
+  return nivo;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function cellAlreadyExists(dayArray, newCell) {
+  for (let cell of dayArray) {
+    if (cell.x == newCell.x) {
+      return true;
+    }
+  }
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
