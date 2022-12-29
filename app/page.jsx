@@ -8,7 +8,9 @@ export default async function Page() {
   return (
     <main className={styles.main}>
       <Suspense fallback={<p>Loading...</p>}>
-        <Electricity data={res.data} meta={res.meta}></Electricity>
+        {res.data.map((year, idx) => (
+          <Electricity key={idx} days={year} meta={res.meta}></Electricity>
+        ))}
       </Suspense>
     </main>
   );

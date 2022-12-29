@@ -2,18 +2,12 @@ import data from "../../data/mes-puissances-atteintes-30min-22408972440918-77500
 
 ////////////////////////////////////////////////////////////////////////////////
 export default async function getNivoData() {
-  const outData = AppCsvToNivoData(EdfCsvToAppCsv(getTmpRawData(data)));
+  const outData = AppCsvToNivoDataByYear(EdfCsvToAppCsv(data));
   const outMeta = getMetaData(outData);
   return {
     data: outData,
     meta: outMeta,
   };
-}
-
-///////////////////////////////////////////////////////////////////////////////
-function getTmpRawData() {
-  let ret = data.slice(0, 3200);
-  return ret;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,42 +16,6 @@ function EdfCsvToAppCsv(inCsv) {
   outCsv = outCsv.slice(1);
   renameKeys(outCsv);
   return outCsv;
-
-  // for (let i = 0; i < data.length - 1; i++) {
-  //   const date = data[i].date;
-  //   const puiss = data[i].puissance;
-  //   if (date && !puiss) {
-  //     currentDate = date;
-  //   } else if (puiss) {
-  //     outArray.push({
-  //       date: currentDate,
-  //       heure: date,
-  //       puissance: puiss,
-  //     });
-  //   }
-  // }
-
-  // let outCsv = [
-  //   ["date", "heure", "energie"],
-  //   ...outArray.map((item) => [item.date, item.heure, item.puissance]),
-  // ]
-  //   .map((e, idx) => e.join(","))
-  //   .join("\n");
-  // outCsv = "data:text/csv;charset=utf-8," + outCsv;
-  // let outUri = encodeURI(outCsv);
-
-  // return (
-  //   <>
-  //     {/* <a href={outUri}>Download</a> */}
-  //     <ul>
-  //       {/* {outArray.map((e, idx) => (
-  //         <li key={idx}>
-  //           {e.date} ; {e.heure} ; {e.puissance}
-  //         </li>
-  //       ))} */}
-  //     </ul>
-  //   </>
-  // );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,13 +42,15 @@ function getMetaData(data) {
     maxEnergie: 0,
   };
 
-  for (let day of data) {
-    for (let cell of day.data) {
-      if (cell.y > ret_meta.maxEnergie) {
-        ret_meta.maxEnergie = cell.y;
-      }
-      if (!ret_meta.minEnergie || cell.y < ret_meta.minEnergie) {
-        ret_meta.minEnergie = cell.y;
+  for (let year of data) {
+    for (let day of year) {
+      for (let cell of day.data) {
+        if (cell.y > ret_meta.maxEnergie) {
+          ret_meta.maxEnergie = cell.y;
+        }
+        if (!ret_meta.minEnergie || cell.y < ret_meta.minEnergie) {
+          ret_meta.minEnergie = cell.y;
+        }
       }
     }
   }
@@ -99,24 +59,58 @@ function getMetaData(data) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-function AppCsvToNivoData(data) {
-  let nivo = [];
-  let idx = 0;
+function AppCsvToNivoDataByYear(data) {
+  let ret_years = [];
+  let currYearIdx = null;
+  let currYear = "0000";
+  let currDayIdx = null;
+  let currDay = null;
+
   for (let row of data) {
+    // Caching the current day if exists
+    if (currYearIdx !== null && currDayIdx !== null) {
+      currDay = ret_years[currYearIdx][currDayIdx];
+    }
+
+    // row is Date only
     if (!row.energie && isDate(row.date)) {
-      nivo.push({ id: row.date, data: [] });
-    } else if (row.energie) {
-      let currDay = nivo[nivo.length - 1];
+      if (currDay) {
+        currDay.data.reverse();
+      }
+      if (isANewYear(row.date, currYear)) {
+        ret_years.push([]);
+        currYearIdx = currYearIdx !== null ? currYearIdx + 1 : 0;
+        currYear = row.date.split("/")[2];
+        currDayIdx = null;
+        currDay = null;
+      }
+      let newDay = { id: row.date, data: [] };
+      ret_years[currYearIdx].push(newDay);
+      currDayIdx = currDayIdx !== null ? currDayIdx + 1 : 0;
+    }
+
+    // row is a Hour and energy
+    else if (row.energie) {
       const newCell = {
         x: row.date,
         y: row.energie,
       };
-      if (!cellAlreadyExists(currDay.data, newCell)) {
+      if (cellIsCorrupted(newCell)) {
+        console.log("Corrupted cell : time is " + newCell.x);
+        console.log("Ignoring current cell");
+      } else if (!cellAlreadyExists(currDay.data, newCell)) {
         currDay.data.push(newCell);
       }
     }
   }
-  return nivo;
+
+  return ret_years;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function isANewYear(date, currYear) {
+  const ddmmyyyy = date.split("/");
+  return ddmmyyyy[2] != currYear;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -127,6 +121,12 @@ function cellAlreadyExists(dayArray, newCell) {
     }
   }
   return false;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function cellIsCorrupted(newCell) {
+  const hms = newCell.x.split(":");
+  return (hms[1] != "00" && hms[1] != "30") || hms[2] != "00";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
