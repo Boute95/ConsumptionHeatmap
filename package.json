@@ -2,6 +2,9 @@
   "name": "datadienne",
   "version": "0.1.0",
   "private": true,
+  "prettier": {
+    "printWidth": 90
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,6 +13,9 @@
   },
   "dependencies": {
     "@next/font": "13.1.1",
+    "@nivo/core": "^0.80.0",
+    "@nivo/heatmap": "^0.80.0",
+    "csv-loader": "^3.0.5",
     "next": "13.1.1",
     "react": "18.2.0",
     "react-dom": "18.2.0"
