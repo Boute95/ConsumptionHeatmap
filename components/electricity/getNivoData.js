@@ -1,4 +1,4 @@
-import data from "../../data/mes-puissances-atteintes-30min-22408972440918-77500.csv";
+import data from "../../data/consommation_electricite.csv";
 
 ////////////////////////////////////////////////////////////////////////////////
 export default async function getNivoData() {

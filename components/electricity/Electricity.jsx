@@ -1,15 +1,15 @@
 "use client";
 
-import { ResponsiveHeatMapCanvas } from "@nivo/heatmap";
+import { HeatMapCanvas } from "@nivo/heatmap";
 
 ///////////////////////////////////////////////////////////////////////////////
 export default function Electricity(props) {
   const cellHeight = 12;
   const totalHeight = Math.max(200, cellHeight * props.days.length);
   return (
-    <ResponsiveHeatMapCanvas
+    <HeatMapCanvas
       data={props.days}
-      // width={800}
+      width={800}
       height={totalHeight}
       yInnerPadding={0.2}
       margin={{ top: 60, right: 90, bottom: 30, left: 90 }}
@@ -25,12 +25,4 @@ export default function Electricity(props) {
       // hoverTarget="cell"
     />
   );
-}
-
-function getWindowDimensions() {
-  const { innerWidth: width, innerHeight: height } = window;
-  return {
-    width,
-    height,
-  };
 }
