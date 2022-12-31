@@ -2,6 +2,7 @@
 
 import { HeatMapCanvas } from "@nivo/heatmap";
 
+
 ///////////////////////////////////////////////////////////////////////////////
 export default function Electricity(props) {
   const cellHeight = 12;
@@ -21,8 +22,10 @@ export default function Electricity(props) {
         minValue: props.meta.minEnergie,
         maxValue: props.meta.maxEnergie,
       }}
-      isInteractive={false}
-      // hoverTarget="cell"
+      animate={false}
+      activeOpacity={0.9}
+      inactiveOpacity={0.5}
+      hoverTarget="row"
     />
   );
 }
