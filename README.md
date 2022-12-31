@@ -7,7 +7,7 @@ This app generates a heat map of your electricity usage during the year, assumin
 Run the server:
 
 ```bash
-npm i
+npm install
 npm run build
 npm run start
 ```
